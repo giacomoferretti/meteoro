@@ -1,4 +1,5 @@
 import { type Config } from "tailwindcss";
+import colors from "tailwindcss/colors";
 import defaultTheme from "tailwindcss/defaultTheme";
 
 export default {
@@ -7,6 +8,10 @@ export default {
     extend: {
       fontFamily: {
         sans: ["var(--font-inter)", ...defaultTheme.fontFamily.sans],
+      },
+
+      colors: {
+        primary: colors.yellow,
       },
     },
   },
