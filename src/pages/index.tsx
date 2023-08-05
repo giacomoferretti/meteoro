@@ -38,7 +38,7 @@ const DashedLine = ({
         <path
           key={id}
           d={lineGenerator(
-            data.map((d) => ({
+            data.map((d: any) => ({
               x: xScale(d.data.x),
               y: yScale(d.data.y),
             })),
