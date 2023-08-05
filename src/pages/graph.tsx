@@ -1,6 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import dynamic from "next/dynamic";
 import Head from "next/head";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import sample_data from "~/sample_data/data_time.json";
 
@@ -8,6 +13,56 @@ const ResponsiveCalendar = dynamic(
   () => import("@nivo/calendar").then((m) => m.ResponsiveCalendar),
   { ssr: false },
 );
+
+const ResponsiveLine = dynamic(
+  () => import("@nivo/line").then((m) => m.ResponsiveLine),
+  { ssr: false },
+);
+
+const styleById: Record<string, any> = {
+  "Predicted consumption": {
+    strokeDasharray: "6, 6",
+    strokeWidth: 2,
+  },
+  "Predicted production": {
+    strokeDasharray: "6, 6",
+    strokeWidth: 2,
+  },
+  default: {
+    strokeWidth: 2,
+  },
+};
+
+const DashedLine = ({
+  series,
+  lineGenerator,
+  xScale,
+  yScale,
+}: {
+  series: any;
+  lineGenerator: any;
+  xScale: any;
+  yScale: any;
+}) => {
+  return series.map(
+    ({ id, data, color }: { id: string; data: any; color: any }) => {
+      return (
+        <path
+          key={id}
+          d={lineGenerator(
+            data.map((d: any) => ({
+              x: xScale(d.data.x),
+              y: yScale(d.data.y),
+            })),
+          )}
+          fill="none"
+          stroke={color}
+          style={styleById[id] || styleById.default}
+        />
+      );
+    },
+  );
+};
 
 const QuickCard = ({
   title,
@@ -84,6 +139,9 @@ export default function GraphDashboard() {
   const consumedPower = useMemo(() => groupByKey("Consumed Power (W)"), []);
   const producedPower = useMemo(() => groupByKey("Produced Power (W)"), []);
 
+  const [start, setStart] = useState(150);
+  const [end, setEnd] = useState(200);
+
   return (
     <>
       <Head>
@@ -142,7 +200,7 @@ export default function GraphDashboard() {
                       estimated={300}
                     />
                     <QuickCard
-                      title={"Current consumption"}
+                      title={"Net difference"}
                       amount={2999.3 - 2534.21}
                       estimated={300 - 2700}
                     />
@@ -181,6 +239,7 @@ export default function GraphDashboard() {
                     />
                   </div>
                 </div>
+
                 <div className="mt-8">
                   <h3 className="text-base font-semibold leading-6 text-gray-900">
                     History of production
@@ -192,7 +251,12 @@ export default function GraphDashboard() {
                       from="2018-08-01"
                       to="2019-08-01"
                       emptyColor="#eeeeee"
-                      colors={["#61cdbb", "#97e3d5", "#e8c1a0", "#f47560"]}
+                      colors={[
+                        "#61cdbb",
+                        "#97e3d5",
+                        "#e8c1a0",
+                        "#f47560",
+                      ].reverse()}
                       margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
                       yearSpacing={40}
                       monthBorderColor="#ffffff"
@@ -209,6 +273,94 @@ export default function GraphDashboard() {
                           itemsSpacing: 14,
                           itemDirection: "right-to-left",
                         },
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <h3 className="text-base font-semibold leading-6 text-gray-900">
+                    Prediction
+                  </h3>
+
+                  <div className="mt-5 h-96 w-full rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                    <div className="flex justify-end">
+                      <input
+                        type="number"
+                        onChange={(e) => setStart(parseInt(e.target.value))}
+                        value={start}
+                      />
+                      <input
+                        type="number"
+                        onChange={(e) => setEnd(parseInt(e.target.value))}
+                        value={end}
+                      />
+                    </div>
+                    <ResponsiveLine
+                      colors={["#f47560", "#e8c1a0", "#61cdbb", "#97e3d5"]}
+                      data={[
+                        {
+                          id: "Actual consumption",
+                          data: sample_data.slice(start, end).map((entry) => ({
+                            x: new Date(entry.date),
+                            y: entry["Produced Power (W)"],
+                          })),
+                        },
+                        {
+                          id: "Predicted consumption",
+                          data: sample_data
+                            .slice(end - 1, end + 24)
+                            .map((entry) => ({
+                              x: new Date(entry.date),
+                              y: entry["Produced Power (W)"],
+                            })),
+                        },
+                        {
+                          id: "Actual production",
+                          data: sample_data.slice(start, end).map((entry) => ({
+                            x: new Date(entry.date),
+                            y: entry["Consumed Power (W)"],
+                          })),
+                        },
+                        {
+                          id: "Predicted production",
+                          data: sample_data
+                            .slice(end - 1, end + 24)
+                            .map((entry) => ({
+                              x: new Date(entry.date),
+                              y: entry["Consumed Power (W)"],
+                            })),
+                        },
+                      ]}
+                      enablePoints={false}
+                      margin={{ top: 50, right: 50, bottom: 50, left: 50 }}
+                      xScale={{
+                        type: "time",
+                      }}
+                      xFormat="time:%d"
+                      yScale={{
+                        type: "linear",
+                      }}
+                      yFormat={(value) =>
+                        `${Number(value).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })} W`
+                      }
+                      axisBottom={{ format: "%b %d %H:%M" }}
+                      curve="monotoneX"
+                      enableSlices={"x"}
+                      useMesh={true}
+                      layers={[
+                        "grid",
+                        "markers",
+                        "areas",
+                        "crosshair",
+                        DashedLine,
+                        "slices",
+                        "points",
+                        "axes",
+                        "legends",
                       ]}
                     />
                   </div>
