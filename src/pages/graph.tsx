@@ -130,8 +130,6 @@ const groupByKey = (key: keyof (typeof sample_data)[0], invert = false) => {
     clean.push({ day: prop, value: holder[prop]! });
   }
 
-  console.log(clean);
-
   return clean;
 };
 
@@ -140,7 +138,7 @@ export default function GraphDashboard() {
   const producedPower = useMemo(() => groupByKey("Produced Power (W)"), []);
 
   const [start, setStart] = useState(150);
-  const [end, setEnd] = useState(200);
+  const [gap, setGap] = useState(50);
 
   return (
     <>
@@ -284,16 +282,22 @@ export default function GraphDashboard() {
                   </h3>
 
                   <div className="mt-5 h-96 w-full rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                    <div className="flex justify-end">
+                    <div className="flex justify-end ">
                       <input
                         type="number"
                         onChange={(e) => setStart(parseInt(e.target.value))}
                         value={start}
+                        className="rounded-l-md border-0 px-3.5 py-2 text-gray-900 placeholder-gray-400 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+                        placeholder="Start"
                       />
                       <input
                         type="number"
-                        onChange={(e) => setEnd(parseInt(e.target.value))}
-                        value={end}
+                        onChange={(e) =>
+                          setGap(parseInt(e.target.value) - start)
+                        }
+                        value={start + gap}
+                        className="rounded-r-md border-0 px-3.5 py-2 text-gray-900 placeholder-gray-400 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+                        placeholder="End"
                       />
                     </div>
                     <ResponsiveLine
@@ -301,15 +305,17 @@ export default function GraphDashboard() {
                       data={[
                         {
                           id: "Actual consumption",
-                          data: sample_data.slice(start, end).map((entry) => ({
-                            x: new Date(entry.date),
-                            y: entry["Produced Power (W)"],
-                          })),
+                          data: sample_data
+                            .slice(start, start + gap)
+                            .map((entry) => ({
+                              x: new Date(entry.date),
+                              y: entry["Produced Power (W)"],
+                            })),
                         },
                         {
                           id: "Predicted consumption",
                           data: sample_data
-                            .slice(end - 1, end + 24)
+                            .slice(start + gap - 1, start + gap + 24)
                             .map((entry) => ({
                               x: new Date(entry.date),
                               y: entry["Produced Power (W)"],
@@ -317,15 +323,17 @@ export default function GraphDashboard() {
                         },
                         {
                           id: "Actual production",
-                          data: sample_data.slice(start, end).map((entry) => ({
-                            x: new Date(entry.date),
-                            y: entry["Consumed Power (W)"],
-                          })),
+                          data: sample_data
+                            .slice(start, start + gap)
+                            .map((entry) => ({
+                              x: new Date(entry.date),
+                              y: entry["Consumed Power (W)"],
+                            })),
                         },
                         {
                           id: "Predicted production",
                           data: sample_data
-                            .slice(end - 1, end + 24)
+                            .slice(start + gap - 1, start + gap + 24)
                             .map((entry) => ({
                               x: new Date(entry.date),
                               y: entry["Consumed Power (W)"],
