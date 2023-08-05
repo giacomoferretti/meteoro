@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import Link from "next/link";
@@ -11,7 +16,7 @@ const ResponsiveLine = dynamic(
   { ssr: false },
 );
 
-const styleById = {
+const styleById: Record<string, any> = {
   Predicted: {
     strokeDasharray: "6, 6",
     strokeWidth: 2,
@@ -33,7 +38,7 @@ const DashedLine = ({
   yScale: any;
 }) => {
   return series.map(
-    ({ id, data, color }: { id: any; data: any; color: any }) => {
+    ({ id, data, color }: { id: string; data: any; color: any }) => {
       return (
         <path
           key={id}
