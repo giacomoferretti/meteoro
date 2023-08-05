@@ -1,1 +1,1 @@
-# Meteoro Dashboard
+# MeteOro Dashboard
